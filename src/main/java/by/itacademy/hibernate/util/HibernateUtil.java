@@ -2,7 +2,7 @@ package by.itacademy.hibernate.util;
 
 import by.itacademy.hibernate.convertor.BirthdayConvertor;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.hibernate.cfg.Configuration;
 
 public class HibernateUtil {
@@ -12,7 +12,7 @@ public class HibernateUtil {
         configuration.addAttributeConverter(new BirthdayConvertor());
 //        configuration.registerTypeOverride(new JsonBinaryType());
 //        configuration.addAnnotatedClass(User.class);
-        configuration.setPhysicalNamingStrategy(new CamelCaseToUnderscoresNamingStrategy());
+        configuration.setPhysicalNamingStrategy(new PhysicalNamingStrategySnakeCaseImpl());
         return configuration.buildSessionFactory();
     }
 }

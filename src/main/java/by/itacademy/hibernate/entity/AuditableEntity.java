@@ -1,10 +1,9 @@
 package by.itacademy.hibernate.entity;
 
+import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.MappedSuperclass;
-import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
 

@@ -1,14 +1,14 @@
 package by.itacademy.hibernate.entity;
 
 import by.itacademy.hibernate.convertor.BirthdayConvertor;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Embeddable;
 import java.io.Serial;
 import java.io.Serializable;
 

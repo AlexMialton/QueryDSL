@@ -1,6 +1,6 @@
 package by.itacademy.hibernate.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
