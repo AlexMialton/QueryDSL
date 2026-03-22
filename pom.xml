@@ -18,7 +18,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.26</version>
+            <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -74,37 +74,99 @@
             <version>3.21.0</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- to have the User_... classes
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-jpamodelgen</artifactId>
+            <version>7.3.0.Final</version>
+            <scope>compile</scope>
+        </dependency>-->
+
+        <dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-jpa</artifactId>
+            <version>5.1.0</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-apt</artifactId>
+            <version>5.1.0</version>
+            <classifier>jakarta</classifier>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-war-plugin</artifactId>
-                    <version>3.3.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
-                    <configuration>
-                        <annotationProcessorPaths>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version> <!-- Update auf eine stabilere Version -->
+                <configuration>
+                    <fork>true</fork>
+                    <generatedSourcesDirectory>${project.build.directory}/generated-sources/java</generatedSourcesDirectory>
+                    <compilerArgs>--enable-preview
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+
+                        <arg>-proc:full</arg>
+
+                        <arg>-s</arg>
+                        <arg>${project.build.directory}/generated-sources/java</arg>
+                        <arg>-Aquerydsl.entityAccessors=true</arg>
+                        <arg>-Aquerydsl.useFields=false</arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <!-- 1. Lombok -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </path>
+                        <!-- 2. MapStruct -->
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${org.mapstruct.version}</version>
+                        </path>
+
+                        <!--  To create the class where the User_ classes are defined
                             <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>1.18.26</version>
+                                <groupId>org.hibernate</groupId>
+                                <artifactId>hibernate-jpamodelgen</artifactId>
+                                <version>7.3.0.Final</version>
                             </path>
-                            <path>
-                                <groupId>org.mapstruct</groupId>
-                                <artifactId>mapstruct-processor</artifactId>
-                                <version>${org.mapstruct.version}</version>
-                            </path>
-                        </annotationProcessorPaths>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+                            -->
+                        <!-- 3. QueryDSL Jakarta (Ersetzt das apt-maven-plugin) -->
+                        <path>
+                            <groupId>com.querydsl</groupId>
+                            <artifactId>querydsl-apt</artifactId>
+                            <version>5.0.0</version>
+                            <classifier>jakarta</classifier>
+                        </path>
+                        <!-- 4. Jakarta Persistence API (Nötig für den Processor) -->
+                        <path>
+                            <groupId>jakarta.persistence</groupId>
+                            <artifactId>jakarta.persistence-api</artifactId>
+                            <version>3.1.0</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
+
+        </plugins>
     </build>
 </project>
+
