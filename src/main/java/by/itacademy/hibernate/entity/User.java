@@ -2,10 +2,29 @@ package by.itacademy.hibernate.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.FetchProfile;
+
 import java.util.ArrayList;
 import java.util.List;
+@NamedEntityGraph(
+        name = "ithCompanyAndChat",
+        attributeNodes = {
+                @NamedAttributeNode("company"),
+                @NamedAttributeNode(value = "userChats", subgraph = "chats")
+        },
+        subgraphs = {
+                @NamedSubgraph(name = "chats", attributeNodes = @NamedAttributeNode("chat"))
+        }
+)
 
 
+
+@FetchProfile(name = "withCompanyAndPayments", fetchOverrides = {
+        @FetchProfile.FetchOverride(entity = User.class, association = "company", mode = FetchMode.JOIN),
+        @FetchProfile.FetchOverride(entity = User.class, association = "payments", mode = FetchMode.JOIN)
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,19 +52,22 @@ public class User implements Comparable<User>, BaseEntity<Long> {
     @JoinColumn(name = "company_id")
     private Company company;
 
-    @OneToOne(
-            mappedBy = "user",
-            cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY
-    )
-    private Profile profile;
+// Get rid of the Profile to make the connection one directional
+// so it doesn't have to load the profile every time we want to load user
+//    @OneToOne(
+//            mappedBy = "user",
+//            cascade = CascadeType.ALL,
+//            fetch = FetchType.LAZY
+//    )
+//    private Profile profile;
 
     @Builder.Default
     @OneToMany(mappedBy = "user")
     private List<UserChat> userChats = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "receiver")
+    @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY)
+//    @BatchSize(size = 3) // hibernate will create select statements for 3 users +3+3+3...
     private List<Payment> payments = new ArrayList<>();
 
     @Override

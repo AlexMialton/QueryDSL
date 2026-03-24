@@ -9,6 +9,7 @@ import org.hibernate.SessionFactory;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.List;
 
 @UtilityClass
 public class TestDataImporter {
@@ -49,6 +50,39 @@ public class TestDataImporter {
         savePayment(session, dianeGreene, 300);
         savePayment(session, dianeGreene, 300);
         savePayment(session, dianeGreene, 300);
+
+
+        Chat chat1 = saveChat(session, "work");
+        Chat chat2 = saveChat(session, "Apple");
+        Chat chat3 = saveChat(session, "project one");
+        Chat chat4 = saveChat(session, "project two");
+        Chat chat5 = saveChat(session, "Microsoft");
+        Chat chat6 = saveChat(session, "Tim's bday");
+
+
+        saveUserChat(session, dianeGreene, chat1);
+        saveUserChat(session, steveJobs, chat1);
+        saveUserChat(session, timCook, chat1);
+
+        saveUserChat(session, dianeGreene, chat2);
+        saveUserChat(session, sergeyBrin, chat2);
+
+        saveUserChat(session, sergeyBrin, chat3);
+        saveUserChat(session, timCook, chat3);
+        saveUserChat(session, steveJobs, chat3);
+
+        saveUserChat(session, timCook, chat4);
+        saveUserChat(session, steveJobs, chat4);
+
+        saveUserChat(session, dianeGreene, chat5);
+        saveUserChat(session, timCook, chat5);
+        saveUserChat(session, steveJobs, chat5);
+
+        saveUserChat(session, sergeyBrin, chat6);
+        saveUserChat(session, steveJobs, chat6);
+        saveUserChat(session, timCook, chat6);
+        saveUserChat(session, dianeGreene, chat6);
+
     }
 
     private Company saveCompany(Session session, String name) {
@@ -90,6 +124,27 @@ public class TestDataImporter {
                 .amount(amount)
                 .build();
         session.persist(payment);
+        session.getTransaction().commit();
+    }
+
+    private Chat saveChat(Session session, String name) {
+        session.beginTransaction();
+        Chat chat = Chat.builder()
+                .name(name)
+                .build();
+        session.persist(chat);
+        session.getTransaction().commit();
+
+        return chat;
+    }
+
+    private void saveUserChat(Session session, User user, Chat chat) {
+        session.beginTransaction();
+        UserChat userChat = UserChat.builder()
+                .chat(chat)
+                .user(user)
+                .build();
+        session.persist(userChat);
         session.getTransaction().commit();
     }
 }
