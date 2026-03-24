@@ -3,19 +3,28 @@ package by.itacademy.hibernate.dao;
 
 import by.itacademy.hibernate.entity.*;
 
+import static by.itacademy.hibernate.entity.QChat.chat;
 import static by.itacademy.hibernate.entity.QCompany.company;
 import static by.itacademy.hibernate.entity.QPayment.payment;
 import static by.itacademy.hibernate.entity.QUser.user;
+import static by.itacademy.hibernate.entity.QUserChat.userChat;
 
+import by.itacademy.hibernate.entity.QUser;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.DatePath;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.StringExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import by.itacademy.hibernate.dto.PaymentFilter;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.hibernate.Session;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -42,7 +51,7 @@ public class UserDao {
     //CritariaAPI + queryDSL
 
         //return new JPAQuery<User>().select(QUser.user).from(QUser.user).fetch();  option + Enter -> add static import
-        return new JPAQuery<User>().select(user)
+        return new JPAQuery<User>(session).select(user)
                                    .from(user)
                                    .fetch();
 
@@ -64,9 +73,9 @@ public class UserDao {
 //        return session.createSelectionQuery(criteria).list();
 
     //CriteriaAPI + queryDSL
-        return new JPAQuery<User>().select(user)
+        return new JPAQuery<User>(session).select(user)
                                    .from(user)
-                                   .where(user.personalInfo().firstname.eq(firstName))
+                                   .where(user.personalInfo.firstname.eq(firstName))
                                    .fetch();
   }
 
@@ -75,9 +84,9 @@ public class UserDao {
      */
     public List<User> findLimitedUsersOrderedByBirthday(Session session, int limit) {
 
-        return JPAQuery<User>().select(user)
+        return new JPAQuery<User>(session).select(user)
                                .from(user)
-                               .orderBy(new OrderSpecifier(Order.ASC, user.personalInfo().birthDate))
+                               .orderBy(new OrderSpecifier(Order.ASC, user.personalInfo.birthDate))
                                .limit(limit)
                                .fetch();
     }
@@ -86,7 +95,7 @@ public class UserDao {
      * Возвращает всех сотрудников компании с указанным названием
      */
     public List<User> findAllByCompanyName(Session session, String companyName) {
-        return JPAQuery<User>().select(user)
+        return new JPAQuery<User>(session).select(user)
                                .from(company)
                                .join(company.users, user)
                                .where(company.name.eq(companyName))
@@ -118,12 +127,12 @@ public class UserDao {
 //        return session.createSelectionQuery(criteria).list();
 
     //CriteriaAPI + queryDSL
-        return JPAQuery<Payment>().select(payment)
-                .from(user)
-                .join(company.users)
-                .join(user.payments)
+        return new JPAQuery<Payment>(session).select(payment)
+                .from(company)
+                .join(company.users, user)
+                .join(user.payments, payment)
                 .where(company.name.eq(companyName))
-                .orderBy(user.personalInfo().firstname.asc(), payment.amount.asc())
+                .orderBy(user.personalInfo.firstname.asc(), payment.amount.asc())
                 .fetch();
     }
 
@@ -139,13 +148,13 @@ public class UserDao {
 //            predicates.add(user.personalInfo().lastname.eq(filter.getLastName()));
 //        }
         var predicate = QPredicate.builder()
-                .add(user.personalInfo().firstname,  e -> user.personalInfo().firstname.eq(e))
-                .add(user.personalInfo().lastname, user.personalInfo().lastname::eq)
+                .add(filter.getFirstName(),  e -> user.personalInfo.firstname.eq(e))
+                .add(filter.getLastName(), user.personalInfo.lastname::eq)
                 .buildAnd();
 
-        return JPAQuery<Double>().select(payment.amount.avg())
+        return new JPAQuery<Double>(session).select(payment.amount.avg())
                 .from(payment)
-                .join(payment.receiver(), user)
+                .join(payment.receiver, user)
 //                .where(user.personalInfo().firstname).eq(firstName)
 //                        .and(user.personalInfo().lastname).eq(lastName)
 
@@ -159,7 +168,7 @@ public class UserDao {
      * Возвращает для каждой компании: название, среднюю зарплату всех её сотрудников. Компании упорядочены по названию.
      */
     public List<Tuple> findCompanyNamesWithAvgUserPaymentsOrderedByCompanyName(Session session) {
-        return new JPAQuery<Tuple>().select(company.name, payment.amount.avg())
+        return new JPAQuery<Tuple>(session).select(company.name, payment.amount.avg())
                 .from(company)
                 .join(company.users, user)
                 .join(user.payments, payment)
@@ -169,25 +178,104 @@ public class UserDao {
 
     }
 
+
     /**
      * Возвращает список: сотрудник (объект User), средний размер выплат, но только для тех сотрудников, чей средний размер выплат
      * больше среднего размера выплат всех сотрудников
      * Упорядочить по имени сотрудника
      */
     public List<Tuple> isItPossible(Session session) {
-        return JPAQuery<Tuple>().select(user, payment.amount.avg())
-                .from(user)
-                .join(payment.receiver(), user)
+        return new JPAQuery<Tuple>(session).select(user, payment.amount.avg())
+                .from(payment)
+                .join(payment.receiver, user)
                 .groupBy(user.id)
                 .having(payment.amount.avg().gt(
                                 new JPAQuery<Double>().select(payment.amount.avg())
                                                       .from(payment)
                 ))
-                .orderBy(user.personalInfo().firstname.asc())
+                .orderBy(user.personalInfo.firstname.asc())
                 .fetch();
     }
 
-    public static UserDao getInstance() {
+    /**
+     * Возвращает список: имя чата и количество участников в нем
+     */
+    public List<Tuple> findHowManyParticipantsChatsHave(Session session){
+        return new JPAQuery<Tuple>(session).select(chat.name, user.count())
+                .from(chat)
+                .join(chat.userChats, userChat)
+                .join(userChat.user, user)
+                .groupBy(chat.id)
+                .orderBy(user.count().asc())
+                .fetch();
+    }
+
+
+    /**
+     * Возвращает список: самого старого и самого молодого юзера
+     */
+    public List<User> findTheOldestAndTheYoungestUsers(Session session){
+        return new JPAQuery<User>(session)
+                .select(user)
+                .from(user)
+                .where(user.personalInfo.birthDate.eq(
+                        JPAExpressions.select(user.personalInfo.birthDate.min()).from(user)
+                ).or(user.personalInfo.birthDate.eq(
+                        JPAExpressions.select(user.personalInfo.birthDate.max()).from(user)
+                )))
+                .orderBy(user.personalInfo.birthDate.asc())
+                .fetch();
+
+    }
+
+
+    /**
+     * Возвращает список: юзера и его статус в соответствии с его активностью в чатах:
+     * состоит в > 3 чатах -> active
+     *         В 1-3 чатах -> passive
+     *         в 0 чатах -> inactive
+     */
+    public List<Tuple> findUserEngagement(Session session){
+        QUser user = QUser.user;
+        StringExpression engagementCategory = new CaseBuilder()
+                .when(user.userChats.size().gt(3)).then("Active")
+                .when(user.userChats.size().eq(0)).then("Inactive")
+                .otherwise("Passive");
+
+        return new JPAQuery<Tuple>(session).select(user, engagementCategory)
+                .from(user)
+                .fetch();
+    }
+
+
+    /**
+     * Возвращает список юзеров и количество чатов, в которых они состоят
+     */
+    public List<Tuple> findHowManyChatsUsersAreMembersOf(Session session){
+        return new JPAQuery<Tuple>(session).select(user, chat.count())
+                .from(user)
+                .leftJoin(user.userChats, userChat)
+                .leftJoin(userChat.chat, chat)
+                .groupBy(user.id)
+                .fetch();
+    }
+
+
+    /**
+     * Возвращает список юзеров, которые за все время заработали больше 1000
+     */
+    public List<Tuple> findWhoEarnedMoreThan1000(Session session){
+        return new JPAQuery<Tuple>(session).select(user, payment.amount.sum())
+                .from(user)
+                .join(user.payments, payment)
+                .groupBy(user.id)
+                .having(payment.amount.sum().gt(1000.0))
+                .fetch();
+    }
+
+
+
+        public static UserDao getInstance() {
         return INSTANCE;
     }
 }

@@ -113,11 +113,12 @@ class UserDaoTest {
         session.beginTransaction();
 
 //      Double averagePaymentAmount = userDao.findAveragePaymentAmountByFirstAndLastNames(session, "Bill", "Gates");
-        Double averagePaymentAmount = userDao.findAveragePaymentAmountByFirstAndLastNames(session, PaymentFilter
-                                                                                                    .builder()
-                                                                                                    .firstName("Bill")
-                                                                                                    .lastName("Gates")
-                                                                                                    .build());
+        Double averagePaymentAmount = userDao.findAveragePaymentAmountByFirstAndLastNames(
+                session, PaymentFilter
+                        .builder()
+                        .firstName("Bill")
+                        .lastName("Gates")
+                        .build());
         assertThat(averagePaymentAmount).isEqualTo(300.0);
 
         session.getTransaction().commit();
@@ -151,8 +152,94 @@ class UserDaoTest {
         List<String> names = results.stream().map(r -> (r.get(0, User.class)).fullName()).collect(toList());
         assertThat(names).contains("Sergey Brin", "Steve Jobs");
 
-        List<Double> averagePayments = results.stream().map(r -> r.get(0, Double.class)).collect(toList());
+        List<Double> averagePayments = results.stream().map(r -> r.get(1, Double.class)).collect(toList());
         assertThat(averagePayments).contains(500.0, 450.0);
+
+        session.getTransaction().commit();
+    }
+
+// Homework_______________________________________________________________________________________________________________________
+
+    @Test
+    public void findHowManyParticipantsChatsHave() {
+        @Cleanup Session session = sessionFactory.openSession();
+        session.beginTransaction();
+
+        List<Tuple> results = userDao.findHowManyParticipantsChatsHave(session);
+        assertThat(results).hasSize(6);
+
+        List<String> chats = results.stream().map(r -> (r.get(0, String.class))).collect(toList());
+        assertThat(chats).contains("Tim's bday", "Microsoft", "project two", "project one", "Apple", "work");
+
+        List<Long> averagePayments = results.stream().map(r -> r.get(1, Long.class)).collect(toList());
+        assertThat(averagePayments).contains(4L, 3L, 2L, 3L, 2L, 3L);
+
+        session.getTransaction().commit();
+
+    }
+
+    @Test //ToDo
+    public void findTheOldestAndTheYoungestUsers() {
+        @Cleanup Session session = sessionFactory.openSession();
+        session.beginTransaction();
+
+        List<User> results = userDao.findTheOldestAndTheYoungestUsers(session);
+
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).fullName()).isEqualTo("Diane Greene");
+        assertThat(results.get(1).fullName()).isEqualTo("Sergey Brin");
+
+        session.getTransaction().commit();
+
+    }
+
+    @Test
+    public void findUserEngagement() {
+        @Cleanup Session session = sessionFactory.openSession();
+        session.beginTransaction();
+
+        List<Tuple> results = userDao.findUserEngagement(session);
+        assertThat(results).hasSize(5);
+
+        List<String> users = results.stream().map(r -> (r.get(0, User.class).fullName())).collect(toList());
+        assertThat(users).contains("Sergey Brin", "Steve Jobs", "Tim Cook", "Diane Greene", "Bill Gates");
+
+        List<String> engagement = results.stream().map(r -> r.get(1, String.class)).collect(toList());
+        assertThat(engagement).contains("Passive", "Active", "Active", "Active", "Inactive");
+
+        session.getTransaction().commit();
+
+    }
+
+    @Test
+    public void findHowManyChatsUsersAreMembersOf() {
+        @Cleanup Session session = sessionFactory.openSession();
+        session.beginTransaction();
+
+        List<Tuple> results = userDao.findHowManyChatsUsersAreMembersOf(session);
+        assertThat(results).hasSize(5);
+
+        List<String> users = results.stream().map(r -> (r.get(0, User.class).fullName())).collect(toList());
+        assertThat(users).contains("Sergey Brin", "Steve Jobs", "Tim Cook", "Diane Greene", "Bill Gates");
+
+        List<Long> engagement = results.stream().map(r -> r.get(1, Long.class)).collect(toList());
+        assertThat(engagement).contains(3L, 5L, 5L, 4L, 0L);
+
+        session.getTransaction().commit();
+
+    }
+
+    @Test
+    public void findWhoEarnedMoreThan1000() {
+        @Cleanup Session session = sessionFactory.openSession();
+        session.beginTransaction();
+
+        List<Tuple> results = userDao.findWhoEarnedMoreThan1000(session);
+        assertThat(results).hasSize(2);
+
+        List<String> users = results.stream().map(r -> (r.get(0, User.class).fullName())).collect(toList());
+        assertThat(users).contains("Sergey Brin", "Steve Jobs");
+
 
         session.getTransaction().commit();
     }
